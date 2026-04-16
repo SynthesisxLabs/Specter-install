@@ -68,36 +68,39 @@ if [ -z "$DMG_URL" ]; then
 fi
 
 echo -e "💎 Found Release: ${CRIMSON}${BOLD}$VERSION${NC}"
-echo -e "\n${BOLD}Release Notes:${NC}"
-echo -e "${RELEASE_NOTES:-No changelog provided for this version.}"
-echo -e "----------------------------------------------------\n"
+# --- Display Release Notes ---
+if [ ! -z "$RELEASE_NOTES" ] && [ "$RELEASE_NOTES" != '""' ] && [ "$RELEASE_NOTES" != "null" ]; then
+    echo -e "${BOLD}Release Notes:${NC}"
+    echo -e "${RELEASE_NOTES}"
+    echo -e "----------------------------------------------------\n"
+fi
 
 # --- Download ---
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 DMG_PATH="$TMP_DIR/Specter.dmg"
 
-echo -e "📥 Downloading Specter Package..."
+echo -e "📥 ${BOLD}Downloading Specter Package...${NC}"
 curl -L -o "$DMG_PATH" "$DMG_URL"
 
 # --- Mount ---
-echo -e "💿 Virtualizing Genesis Core..."
+echo -e "💿 ${BOLD}Virtualizing Genesis Core...${NC}"
 mount_point=$(hdiutil mount -nobrowse "$DMG_PATH" | tail -n 1 | awk -F'\t' '{print $NF}' | xargs)
 
 # --- Install ---
-echo -e "🚀 Deploying to /Applications..."
+echo -e "🚀 ${BOLD}Deploying to Applications...${NC}"
 if [ -d "/Applications/$APP_NAME.app" ]; then
-    echo -e "🔄 Updating existing installation..."
+    echo -e "🔄 ${BOLD}Updating existing installation...${NC}"
     rm -rf "/Applications/$APP_NAME.app"
 fi
 cp -R "$mount_point/$APP_NAME.app" /Applications/
 
 # --- Quarantine Bypass ---
-echo -e "🛡️  Sanitizing Gatekeeper clearance..."
+echo -e "🛡️  ${BOLD}Sanitizing Gatekeeper clearance...${NC}"
 xattr -rd com.apple.quarantine "/Applications/$APP_NAME.app" 2>/dev/null || true
 
 # --- Cleanup ---
-echo -e "🧹 Sanitizing environment..."
+echo -e "🧹 ${BOLD}Sanitizing environment...${NC}"
 if [ -n "$mount_point" ]; then
     hdiutil unmount -force "$mount_point" >/dev/null 2>&1
 fi
@@ -105,13 +108,14 @@ fi
 # --- Success ---
 echo -e "\n----------------------------------------------------"
 echo -e "${CRIMSON}${BOLD}SUCCESS: SPECTER IS NOW OPERATIONAL${NC}"
-echo -e "Location: ${BOLD}/Applications/$APP_NAME.app${NC}"
-echo -e "Telemetry: ${BOLD}https://synthesisx.app${NC}"
+echo -e "Location:  ${BOLD}/Applications/$APP_NAME.app${NC}"
+echo -e "Telemetry: ${CRIMSON}${BOLD}https://SynthesisxLabs.xyz${NC}"
 echo -e "----------------------------------------------------\n"
 
 # --- Auto-Launch ---
 read -p "Execute Specter Core now? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "⚡ ${BOLD}Booting Specter...${NC}"
     open "/Applications/$APP_NAME.app"
 fi
