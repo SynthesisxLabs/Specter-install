@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 🔮 SPECTER INSTALLER
-# Redefining the boundary between hardware and interface.
+# SPECTER INSTALLER - Genesis v1.0
+# High-fidelity deployment for SynthesisxLabs.
 
 set -e
 
@@ -14,7 +14,7 @@ BUNDLE_ID="app.specter.desktop"
 # --- Colors ---
 RED='\033[0;31m'
 CRIMSON='\033[38;2;196;30;58m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 BOLD='\033[1m'
 
 # --- Header ---
@@ -33,27 +33,20 @@ ARCH=$(uname -m)
 OS_VER=$(sw_vers -productVersion)
 MAJOR_VER=$(echo $OS_VER | cut -d. -f1)
 
-echo -e "⚡ System: ${BOLD}macOS $OS_VER ($ARCH)${NC}"
+echo -e "System Status: ${BOLD}macOS $OS_VER ($ARCH)${NC}"
 
 if [[ "$OSTYPE" != "darwin"* ]]; then
     echo -e "${RED}Error: Specter is currently macOS exclusive.${NC}"
     exit 1
 fi
 
-if [ "$MAJOR_VER" -lt 14 ]; then
-    echo -e "${RED}Warning: Specter is optimized for macOS 14+. Performance may vary on $OS_VER.${NC}"
-fi
-
 # --- Fetch Latest Release ---
-echo -e "🛰️  Connecting to Specter Registry..."
+echo -e "Connecting to Specter Registry..."
 API_URL="https://api.github.com/repos/$ORG/$REPO/releases/latest"
 RELEASE_INFO=$(curl -s $API_URL)
 
-# Check if release exists
 if [[ $(echo "$RELEASE_INFO" | grep '"message": "Not Found"') ]]; then
-    echo -e "${RED}${BOLD}CRITICAL: No operational releases found at $ORG/$REPO.${NC}"
-    echo -e "💡 TIP: Visit https://github.com/$ORG/$REPO/releases and publish your first"
-    echo -e "   'v1.0.0-genesis' release with a .dmg asset to activate this installer."
+    echo -e "${RED}CRITICAL: No releases found at $ORG/$REPO.${NC}"
     exit 1
 fi
 
@@ -62,14 +55,13 @@ DMG_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep ".dmg" | hea
 RELEASE_NOTES=$(echo "$RELEASE_INFO" | grep '"body":' | sed -E 's/.*"body": "([^"]+)".*/\1/' | sed 's/\\r\\n/ /g' | sed 's/\\n/\n/g')
 
 if [ -z "$DMG_URL" ]; then
-    echo -e "${RED}Error: Could not find a stable DMG asset for version $VERSION.${NC}"
-    echo -e "Make sure you have uploaded a .dmg file to the latest release."
+    echo -e "${RED}Error: No DMG asset found for $VERSION.${NC}"
     exit 1
 fi
 
-echo -e "💎 Found Release: ${CRIMSON}${BOLD}$VERSION${NC}"
+echo -e "Found Release Identifier: ${CRIMSON}${BOLD}$VERSION${NC}"
 
-# --- Display Release Notes (Silently hide if empty or messy) ---
+# --- Display Release Notes ---
 if [ ! -z "$RELEASE_NOTES" ] && [ "$RELEASE_NOTES" != '""' ] && [ "$RELEASE_NOTES" != "null" ]; then
     echo -e "${BOLD}Release Notes:${NC}"
     echo -e "${RELEASE_NOTES}"
@@ -81,27 +73,26 @@ TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 DMG_PATH="$TMP_DIR/Specter.dmg"
 
-echo -e "📥 ${BOLD}Downloading Specter Package...${NC}"
+echo -e "Downloading Specter Package..."
 curl -L -o "$DMG_PATH" "$DMG_URL"
 
 # --- Mount ---
-echo -e "💿 ${BOLD}Virtualizing Genesis Core...${NC}"
+echo -e "Virtualizing Installation Surface..."
 mount_point=$(hdiutil mount -nobrowse "$DMG_PATH" | tail -n 1 | awk -F'\t' '{print $NF}' | xargs)
 
 # --- Install ---
-echo -e "🚀 ${BOLD}Deploying to Applications...${NC}"
+echo -e "Deploying Specter.app..."
 if [ -d "/Applications/$APP_NAME.app" ]; then
-    echo -e "🔄 ${BOLD}Updating existing installation...${NC}"
     rm -rf "/Applications/$APP_NAME.app"
 fi
 cp -R "$mount_point/$APP_NAME.app" /Applications/
 
 # --- Quarantine Bypass ---
-echo -e "🛡️  ${BOLD}Sanitizing Gatekeeper clearance...${NC}"
+echo -e "Applying Security Clearances..."
 xattr -rd com.apple.quarantine "/Applications/$APP_NAME.app" 2>/dev/null || true
 
 # --- Cleanup ---
-echo -e "🧹 ${BOLD}Sanitizing environment...${NC}"
+echo -e "Cleaning environment..."
 if [ -n "$mount_point" ]; then
     hdiutil unmount -force "$mount_point" >/dev/null 2>&1
 fi
@@ -109,15 +100,15 @@ fi
 # --- Success ---
 echo -e "\n----------------------------------------------------"
 echo -e "${CRIMSON}${BOLD}SUCCESS: SPECTER IS NOW OPERATIONAL${NC}"
-echo -e "Location:  ${BOLD}/Applications/$APP_NAME.app${NC}"
-echo -e "Telemetry: ${CRIMSON}${BOLD}https://SynthesisxLabs.xyz${NC}"
+echo -e "Location:  /Applications/$APP_NAME.app"
+echo -e "Telemetry: https://SynthesisxLabs.xyz"
 echo -e "----------------------------------------------------\n"
 
-# --- Auto-Launch ---
+# --- Auto-Launch (Clean Terminal String) ---
 printf "Execute Specter Core now? (y/n) "
 read -n 1 -r REPLY
-echo
+printf "\n"
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "⚡ ${BOLD}Booting Specter...${NC}"
-    open "/Applications/$APP_NAME.app"
+printf "Booting Specter...\n"
+open "/Applications/Specter.app"
 fi
