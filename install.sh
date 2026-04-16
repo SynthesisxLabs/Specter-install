@@ -1,6 +1,6 @@
 #!/bin/bash
-# Specter One-Line Installer
-# Downloads, mounts, and silently installs Specter exactly where it needs to go.
+# Specter Host Engine — Automated Installer
+# Bypasses rigorous Gatekeeper security for early-access Developer distributions.
 
 set -e
 
@@ -21,28 +21,47 @@ if [ -z "$LATEST_RELEASE_URL" ]; then
     exit 1
 fi
 
+TMP_DIR=$(mktemp -d)
+DMG_PATH="$TMP_DIR/$DMG_NAME"
+
 echo "⬇️ Downloading Specter..."
-curl -L -o "/tmp/$DMG_NAME" "$LATEST_RELEASE_URL"
+curl -L -o "$DMG_PATH" "$LATEST_RELEASE_URL" -#
 
 echo "💿 Mounting Disk Image..."
-MOUNT_PATH=$(hdiutil attach "/tmp/$DMG_NAME" -nobrowse | grep "Volumes" | awk -F'\t' '{print $3}')
+# Robustly extract the mount path regardless of macOS terminal formatting
+MOUNT_PATH=$(hdiutil attach "$DMG_PATH" -nobrowse | grep -o '/Volumes/.*' | head -n 1)
+
+if [ -z "$MOUNT_PATH" ]; then
+    echo "❌ Error: Failed to mount disk image."
+    exit 1
+fi
 
 # Check if app is already running
 if pgrep -x "$APP_NAME" > /dev/null; then
     echo "🛑 Stopping currently running Specter..."
     killall "$APP_NAME"
+    sleep 1
+fi
+
+# Remove existing installation to prevent permission ghosting
+if [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
+    echo "🗑️ Removing previous version..."
+    sudo rm -rf "$INSTALL_DIR/$APP_NAME.app"
 fi
 
 echo "📦 Installing to $INSTALL_DIR..."
 sudo cp -R "$MOUNT_PATH/$APP_NAME.app" "$INSTALL_DIR/"
 
-echo "🔓 Bypassing Apple Gatekeeper Quarantine (Developer Mode)..."
-sudo xattr -d com.apple.quarantine "$INSTALL_DIR/$APP_NAME.app" || true
+echo "🔓 Bypassing Apple Gatekeeper Quarantine..."
+sudo xattr -rd com.apple.quarantine "$INSTALL_DIR/$APP_NAME.app" || true
 
 echo "🧹 Cleaning up installers..."
 hdiutil detach "$MOUNT_PATH" -quiet
-rm "/tmp/$DMG_NAME"
+rm -rf "$TMP_DIR"
+
+echo "🚀 Launching Specter Engine..."
+open "$INSTALL_DIR/$APP_NAME.app"
 
 echo ""
-echo "✅ Specter successfully installed to $INSTALL_DIR/$APP_NAME.app!"
-echo "🚀 You can now launch Specter from Spotlight!"
+echo "✅ Specter is now successfully installed and running!"
+
