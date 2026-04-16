@@ -102,14 +102,22 @@ echo -e "Location:  /Applications/$APP_NAME.app"
 echo -e "Telemetry: https://SynthesisxLabs.xyz"
 echo -e "----------------------------------------------------\n"
 
-# --- Auto-Launch (TTY Fixed) ---
-# We redirect stdin from /dev/tty so curl | bash doesn't consume the script
-echo -n "Execute Specter Core now? (y/n) "
-read -r REPLY < /dev/tty || true
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "⚡ ${BOLD}Booting Specter...${NC}"
-    open "/Applications/$APP_NAME.app"
-else
-    echo -e "Deployment complete. Stay safe."
-fi
+# --- Auto-Launch (Bulletproof Pipe Fix) ---
+launch_specter() {
+    # Force input from the terminal keyboard
+    exec < /dev/tty
+    echo -n "Execute Specter Core now? (y/n) "
+    read -r REPLY
+    
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        echo -e "Booting Specter..."
+        open "/Applications/$APP_NAME.app"
+    else
+        echo -e "Deployment complete. Stay safe."
+    fi
+}
+
+# Execute launch sequence
+launch_specter
+
+# End of script
