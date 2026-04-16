@@ -91,7 +91,9 @@ xattr -rd com.apple.quarantine "/Applications/$APP_NAME.app" 2>/dev/null || true
 
 # --- Cleanup ---
 echo -e "Cleaning environment..."
-hdiutil unmount -force "$mount_point" >/dev/null 2>&1
+if [ -n "$mount_point" ]; then
+    hdiutil unmount -force "$mount_point" >/dev/null 2>&1
+fi
 
 # --- Success ---
 echo -e "\n----------------------------------------------------"
@@ -100,10 +102,14 @@ echo -e "Location:  /Applications/$APP_NAME.app"
 echo -e "Telemetry: https://SynthesisxLabs.xyz"
 echo -e "----------------------------------------------------\n"
 
-# --- Auto-Launch ---
+# --- Auto-Launch (TTY Fixed) ---
+# We redirect stdin from /dev/tty so curl | bash doesn't consume the script
 echo -n "Execute Specter Core now? (y/n) "
-read -r REPLY
+read -r REPLY < /dev/tty || true
+echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Booting Specter..."
+    echo -e "⚡ ${BOLD}Booting Specter...${NC}"
     open "/Applications/$APP_NAME.app"
+else
+    echo -e "Deployment complete. Stay safe."
 fi
