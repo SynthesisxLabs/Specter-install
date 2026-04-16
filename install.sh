@@ -49,12 +49,21 @@ echo -e "🛰️  Connecting to Specter Registry..."
 API_URL="https://api.github.com/repos/$ORG/$REPO/releases/latest"
 RELEASE_INFO=$(curl -s $API_URL)
 
-VERSION=$(echo "$RELEASE_INFO" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+# Check if release exists
+if [[ $(echo "$RELEASE_INFO" | grep '"message": "Not Found"') ]]; then
+    echo -e "${RED}${BOLD}CRITICAL: No operational releases found at $ORG/$REPO.${NC}"
+    echo -e "💡 TIP: Visit https://github.com/$ORG/$REPO/releases and publish your first"
+    echo -e "   'v1.0.0-genesis' release with a .dmg asset to activate this installer."
+    exit 1
+fi
+
+VERSION=$(echo "$RELEASE_INFO" | grep '"tag_name":' | sed -E 's/.*"tag_name": "([^"]+)".*/\1/')
 DMG_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep ".dmg" | head -n 1 | cut -d '"' -f 4)
-RELEASE_NOTES=$(echo "$RELEASE_INFO" | grep '"body":' | sed -E 's/.*"body": "([^"]+)".*/\1/' | sed 's/\\r\\n/\n/g' | sed 's/\\n/\n/g')
+RELEASE_NOTES=$(echo "$RELEASE_INFO" | grep '"body":' | sed -E 's/.*"body": "([^"]+)".*/\1/' | sed 's/\\r\\n/ /g' | sed 's/\\n/\n/g')
 
 if [ -z "$DMG_URL" ]; then
-    echo -e "${RED}Error: Could not find a stable DMG release for $VERSION.${NC}"
+    echo -e "${RED}Error: Could not find a stable DMG asset for version $VERSION.${NC}"
+    echo -e "Make sure you have uploaded a .dmg file to the latest release."
     exit 1
 fi
 
