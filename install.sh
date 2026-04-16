@@ -102,16 +102,23 @@ echo -e "Location:  /Applications/$APP_NAME.app"
 echo -e "Telemetry: https://SynthesisxLabs.xyz"
 echo -e "----------------------------------------------------\n"
 
-# --- Auto-Launch (Ironclad Pipe Fix) ---
-# We wrap this in a block to ensure the entire clause is parsed before execution
-{
-    printf "Execute Specter Core now? (y/n) "
-    if read -r REPLY < /dev/tty && [[ "$REPLY" =~ ^[Yy]$ ]]; then
-        printf "Booting Specter...\n"
-        open "/Applications/Specter.app"
-    else
-        printf "Deployment complete. Specter is ready.\n"
-    fi
-}
+# --- Auto-Launch (Final Fix) ---
+echo -n "Execute Specter Core now? (y/n) "
 
-# End of script
+# Read directly from the keyboard
+read -r REPLY < /dev/tty
+
+# Convert input to lowercase to handle 'Y' or 'y'
+REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]')
+
+if [[ "$REPLY" == "y"* ]]; then
+    echo "Booting Specter..."
+    open "/Applications/Specter.app"
+else
+    echo "Deployment complete. Stay safe."
+fi
+
+# IMPORTANT: Keep these empty lines at the end of your file
+# 
+# 
+#
