@@ -7,7 +7,7 @@ set -e
 
 # --- Configuration ---
 ORG="SynthesisxLabs"
-REPO="Specter"
+REPO="Specter-install"
 APP_NAME="Specter"
 BUNDLE_ID="app.specter.desktop"
 
