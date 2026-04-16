@@ -31,7 +31,7 @@ echo "----------------------------------------------------"
 # --- Environment Check ---
 ARCH=$(uname -m)
 OS_VER=$(sw_vers -productVersion)
-MAJOR_VER=$(echo $OS_VER | cut -sr -d. -f1)
+MAJOR_VER=$(echo $OS_VER | cut -d. -f1)
 
 echo -e "⚡ System: ${BOLD}macOS $OS_VER ($ARCH)${NC}"
 
