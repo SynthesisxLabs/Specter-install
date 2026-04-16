@@ -102,23 +102,25 @@ echo -e "Location:  /Applications/$APP_NAME.app"
 echo -e "Telemetry: https://SynthesisxLabs.xyz"
 echo -e "----------------------------------------------------\n"
 
-# --- Auto-Launch (Final Fix) ---
-echo -n "Execute Specter Core now? (y/n) "
+# --- Auto-Launch (Frictionless Fix) ---
+launch_specter() {
+    # Force input from the terminal keyboard
+    exec < /dev/tty
+    echo -n "Execute Specter Core now? [Y/n] "
+    read -r REPLY
+    
+    # Standardize input: lowercase and check for empty (Enter)
+    REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]')
+    
+    if [[ -z "$REPLY" || "$REPLY" == "y"* ]]; then
+        echo -e "Booting Specter..."
+        open "/Applications/Specter.app"
+    else
+        echo -e "Deployment complete. Stay safe."
+    fi
+}
 
-# Read directly from the keyboard
-read -r REPLY < /dev/tty
+# Execute launch sequence
+launch_specter
 
-# Convert input to lowercase to handle 'Y' or 'y'
-REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]')
-
-if [[ "$REPLY" == "y"* ]]; then
-    echo "Booting Specter..."
-    open "/Applications/Specter.app"
-else
-    echo "Deployment complete. Stay safe."
-fi
-
-# IMPORTANT: Keep these empty lines at the end of your file
-# 
-# 
-#
+# End of script
