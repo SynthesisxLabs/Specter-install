@@ -102,22 +102,16 @@ echo -e "Location:  /Applications/$APP_NAME.app"
 echo -e "Telemetry: https://SynthesisxLabs.xyz"
 echo -e "----------------------------------------------------\n"
 
-# --- Auto-Launch (Bulletproof Pipe Fix) ---
-launch_specter() {
-    # Force input from the terminal keyboard
-    exec < /dev/tty
-    echo -n "Execute Specter Core now? (y/n) "
-    read -r REPLY
-    
-    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-        echo -e "Booting Specter..."
-        open "/Applications/$APP_NAME.app"
+# --- Auto-Launch (Ironclad Pipe Fix) ---
+# We wrap this in a block to ensure the entire clause is parsed before execution
+{
+    printf "Execute Specter Core now? (y/n) "
+    if read -r REPLY < /dev/tty && [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        printf "Booting Specter...\n"
+        open "/Applications/Specter.app"
     else
-        echo -e "Deployment complete. Stay safe."
+        printf "Deployment complete. Specter is ready.\n"
     fi
 }
-
-# Execute launch sequence
-launch_specter
 
 # End of script
