@@ -68,7 +68,8 @@ if [ -z "$DMG_URL" ]; then
 fi
 
 echo -e "💎 Found Release: ${CRIMSON}${BOLD}$VERSION${NC}"
-# --- Display Release Notes ---
+
+# --- Display Release Notes (Silently hide if empty or messy) ---
 if [ ! -z "$RELEASE_NOTES" ] && [ "$RELEASE_NOTES" != '""' ] && [ "$RELEASE_NOTES" != "null" ]; then
     echo -e "${BOLD}Release Notes:${NC}"
     echo -e "${RELEASE_NOTES}"
@@ -113,7 +114,8 @@ echo -e "Telemetry: ${CRIMSON}${BOLD}https://SynthesisxLabs.xyz${NC}"
 echo -e "----------------------------------------------------\n"
 
 # --- Auto-Launch ---
-read -p "Execute Specter Core now? (y/n) " -n 1 -r
+printf "Execute Specter Core now? (y/n) "
+read -n 1 -r REPLY
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "⚡ ${BOLD}Booting Specter...${NC}"
