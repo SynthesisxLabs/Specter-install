@@ -1,71 +1,95 @@
 #!/bin/bash
 
-# 🔮 SPECTER INSTALLER v1.0
-# Next-Generation Mac Intelligence Bridge
-# https://github.com/SynthesisxLabs/Specter
+# 🔮 SPECTER INSTALLER
+# Redefining the boundary between hardware and interface.
 
 set -e
 
-# Visuals
+# --- Configuration ---
+ORG="SynthesisxLabs"
+REPO="Specter"
+APP_NAME="Specter"
+BUNDLE_ID="app.specter.desktop"
+
+# --- Colors ---
 RED='\033[0;31m'
-VOID='\033[0;37m'
+CRIMSON='\033[38;2;196;30;58m'
 NC='\033[0m' # No Color
+BOLD='\033[1m'
 
-echo -e "${RED}"
-cat << "EOF"
-    _____ ____  __________________________ 
-   / ___// __ \/ ____/ ____/_  __/ ____/ __ \
-   \__ \/ /_/ / __/ / /     / / / __/ / /_/ /
-  ___/ / ____/ /___/ /___  / / / /___/ _, _/ 
- /____/_/   /_____/\____/ /_/ /_____/_/ |_|  
-                                             
-EOF
-echo -e "${VOID}Next-Generation Mac Intelligence Bridge${NC}\n"
+# --- Header ---
+echo -e "${CRIMSON}${BOLD}"
+echo "    _____ ____  __________________________ "
+echo "   / ___// __ \\/ ____/ ____/_  __/ ____/ __ \\"
+echo "   \\__ \\/ /_/ / __/ / /     / / / __/ / /_/ /"
+echo "  ___/ / ____/ /___/ /___  / / / /___/ _, _/ "
+echo " /____/_/   /_____/\\____/ /_/ /_____/_/ |_|  "
+echo -e "${NC}"
+echo -e "${BOLD}Initializing Specter v1.0 (Genesis) Deployment...${NC}"
+echo "----------------------------------------------------"
 
-# 1. Detect Architecture
-ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ]; then
-    RELEASE_SUF="aarch64.dmg"
-    echo -e "⚡ Detected ${RED}Apple Silicon${NC} Architecture"
-else
-    RELEASE_SUF="x64.dmg"
-    echo -e "⚡ Detected ${RED}Intel${NC} Architecture"
-fi
-
-# 2. Fetch Latest Release via GitHub API
-echo -e "🛰️ Connecting to Specter Registry..."
-LATEST_JSON=$(curl -s https://api.github.com/repos/SynthesisxLabs/Specter/releases/latest)
-LATEST_VERSION=$(echo "$LATEST_JSON" | grep -oE '"tag_name": "[^"]+"' | head -n 1 | cut -d'"' -f4)
-
-if [ -z "$LATEST_VERSION" ]; then
-    echo -e "❌ ${RED}Error:${NC} Could not find latest release. Please check https://github.com/SynthesisxLabs/Specter/releases"
+# --- Environment Check ---
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    echo -e "${RED}Error: Specter is currently macOS exclusive.${NC}"
     exit 1
 fi
 
-echo -e "🎁 Found Release: ${RED}${LATEST_VERSION}${NC}"
+# --- Fetch Latest Release ---
+echo -e "🛰️  Fetching latest telemetry from GitHub..."
+API_URL="https://api.github.com/repos/$ORG/$REPO/releases/latest"
+RELEASE_INFO=$(curl -s $API_URL)
 
-# 3. Find target asset
-DOWNLOAD_URL=$(echo "$LATEST_JSON" | grep -oE "https://github.com/SynthesisxLabs/Specter/releases/download/[^\"]+$RELEASE_SUF" | head -n 1)
+VERSION=$(echo "$RELEASE_INFO" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+DMG_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep ".dmg" | head -n 1 | cut -d '"' -f 4)
 
-if [ -z "$DOWNLOAD_URL" ]; then
-    echo -e "❌ ${RED}Error:${NC} Could not find the DMG for your architecture. It might still be building."
+if [ -z "$DMG_URL" ]; then
+    echo -e "${RED}Error: Could not find a stable DMG release for $VERSION.${NC}"
     exit 1
 fi
 
-# 4. Download and Install
-TEMP_DMG="/tmp/Specter.dmg"
+echo -e "💎 Found Specter $VERSION"
+
+# --- Download ---
+TMP_DIR=$(mktemp -d)
+DMG_PATH="$TMP_DIR/Specter.dmg"
+
 echo -e "📥 Downloading Specter..."
-curl -L -o "$TEMP_DMG" "$DOWNLOAD_URL"
+curl -L -o "$DMG_PATH" "$DMG_URL"
 
-echo -e "💿 Mounting Disk Image..."
-MOUNT_POINT=$(hdiutil mount "$TEMP_DMG" | tail -n 1 | awk '{print $3}')
+# --- Mount ---
+echo -e "📦 Mounting Genesis Core..."
+mount_point=$(hdiutil mount "$DMG_PATH" | tail -n 1 | awk '{print $3}')
 
-echo -e "🚀 Installing to Applications..."
-cp -R "$MOUNT_POINT/Specter.app" /Applications/
+# --- Install ---
+echo -e "🚀 Deploying to /Applications..."
+# Remove existing version if present
+if [ -d "/Applications/$APP_NAME.app" ]; then
+    rm -rf "/Applications/$APP_NAME.app"
+fi
+cp -R "$mount_point/$APP_NAME.app" /Applications/
 
-echo -e "🧹 Cleaning up..."
-hdiutil unmount "$MOUNT_POINT"
-rm "$TEMP_DMG"
+# --- Quarantine Bypass ---
+echo -e "🛡️  Bypassing Gatekeeper quarantine..."
+xattr -rd com.apple.quarantine "/Applications/$APP_NAME.app" || true
 
-echo -e "\n✅ ${RED}SPECTER INSTALLED SUCCESSFULLY${NC}"
-echo -e "Open your ${RED}Applications${NC} folder to launch the terminal.\n"
+# --- Cleanup ---
+echo -e "🧹 Sanitizing environment..."
+# Check if mounted before unmounting
+if [ -n "$mount_point" ]; then
+    hdiutil unmount "$mount_point"
+fi
+rm -rf "$TMP_DIR"
+
+# --- Success ---
+echo "----------------------------------------------------"
+echo -e "${CRIMSON}${BOLD}SUCCESS: Specter is now operational.${NC}"
+echo -e "Find it in your ${BOLD}/Applications${NC} folder."
+echo -e "Visit ${BOLD}https://synthesisx.app${NC} for telemetry syncing."
+echo "----------------------------------------------------"
+
+# --- Auto-Launch ---
+read -p "Do you want to launch Specter now? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    open "/Applications/$APP_NAME.app"
+fi
